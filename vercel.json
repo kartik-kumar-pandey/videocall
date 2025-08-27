@@ -13,11 +13,6 @@
     }
   ],
   "env": {
-    "NEXT_PUBLIC_SIGNALING_SERVER": "@signaling_server_url"
-  },
-  "functions": {
-    "pages/api/**/*.js": {
-      "maxDuration": 30
-    }
+    "NEXT_PUBLIC_SIGNALING_SERVER": "https://videocall-clzn.onrender.com"
   }
 }
