@@ -146,7 +146,9 @@ app.get("/room/:roomId", (req, res) => {
   }
 });
 
-server.listen(5000, () => {
-  console.log("🚀 Signaling server running on port 5000");
-  console.log("📊 Health check: http://localhost:5000/health");
+const PORT = process.env.PORT || 5000;
+
+server.listen(PORT, () => {
+  console.log("🚀 Signaling server running on port", PORT);
+  console.log("📊 Health check: http://localhost:" + PORT + "/health");
 });

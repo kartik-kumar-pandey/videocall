@@ -204,7 +204,8 @@ export const useWebRTC = (roomId, userName) => {
         }
 
         // Connect to signaling server
-        socket.current = io("http://localhost:5000", {
+        const signalingServer = process.env.NEXT_PUBLIC_SIGNALING_SERVER || "http://localhost:5000";
+        socket.current = io(signalingServer, {
           transports: ['websocket', 'polling'],
           timeout: 20000,
           reconnection: true,

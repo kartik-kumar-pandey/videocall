@@ -255,6 +255,10 @@ package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
+# Deployment files
+package-backend.json
+render.yaml
+
 # Local development
 .local/
 local/
