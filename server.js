@@ -11,6 +11,22 @@ const io = socketIo(server, {
   pingInterval: 25000
 });
 
+// Basic middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Root endpoint
+app.get("/", (req, res) => {
+  res.json({ 
+    message: "VidFlow Pro Signaling Server", 
+    status: "running",
+    endpoints: {
+      health: "/health",
+      room: "/room/:roomId"
+    }
+  });
+});
+
 // Store room user mappings with better structure
 const rooms = new Map();
 
