@@ -83,19 +83,14 @@ io.on("connection", (socket) => {
   socket.on("signal", (data) => {
     const { roomId, data: signalData, fromUser, toUser } = data;
     
-    // Find the target user's socket
+    // Route by socketId (toUser is socketId)
     const room = rooms.get(roomId);
-    if (room) {
-      for (const [socketId, user] of room.entries()) {
-        if (user.userName === toUser) {
-          io.to(socketId).emit("signal", { 
-            data: signalData, 
-            fromUser, 
-            toUser 
-          });
-          break;
-        }
-      }
+    if (room && room.has(toUser)) {
+      io.to(toUser).emit("signal", { 
+        data: signalData, 
+        fromUser, // sender socketId
+        toUser    // receiver socketId
+      });
     }
   });
 

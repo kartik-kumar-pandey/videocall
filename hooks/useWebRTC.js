@@ -32,7 +32,7 @@ export const useWebRTC = (roomId, userName) => {
   }, []);
 
   // Create peer connection
-  const createPeer = useCallback((userId, initiator = false) => {
+  const createPeer = useCallback((socketId, initiator = false) => {
     try {
       const peer = new Peer({
         initiator,
@@ -55,7 +55,7 @@ export const useWebRTC = (roomId, userName) => {
             roomId, 
             data, 
             fromUser: userName,
-            toUser: userId 
+            toUser: socketId 
           });
         }
       });
@@ -63,8 +63,8 @@ export const useWebRTC = (roomId, userName) => {
       peer.on("stream", (remoteStream) => {
         setParticipants(prev => {
           const newMap = new Map(prev);
-          const existing = newMap.get(userId);
-          newMap.set(userId, {
+          const existing = newMap.get(socketId);
+          newMap.set(socketId, {
             stream: remoteStream,
             userName: existing?.userName || "Unknown User"
           });
@@ -84,12 +84,12 @@ export const useWebRTC = (roomId, userName) => {
         console.log("Peer connection closed");
         setParticipants(prev => {
           const newMap = new Map(prev);
-          newMap.delete(userId);
+          newMap.delete(socketId);
           return newMap;
         });
         
-        if (peersRef.current.has(userId)) {
-          peersRef.current.delete(userId);
+        if (peersRef.current.has(socketId)) {
+          peersRef.current.delete(socketId);
         }
         
         if (participants.size === 0) {
@@ -108,17 +108,23 @@ export const useWebRTC = (roomId, userName) => {
 
   // Handle incoming signals
   const handleSignal = useCallback(({ data, fromUser, toUser }) => {
-    if (toUser === userName && peersRef.current.has(fromUser)) {
-      const peer = peersRef.current.get(fromUser);
-      if (peer && !peer.destroyed) {
-        try {
-          peer.signal(data);
-        } catch (error) {
-          console.error("Error signaling peer:", error);
-        }
+    // fromUser/toUser are socketIds now
+    let peer = peersRef.current.get(fromUser);
+    if (!peer) {
+      // Create non-initiator peer upon first inbound signal
+      peer = createPeer(fromUser, false);
+      if (peer) {
+        peersRef.current.set(fromUser, peer);
       }
     }
-  }, [userName]);
+    if (peer && !peer.destroyed) {
+      try {
+        peer.signal(data);
+      } catch (error) {
+        console.error("Error signaling peer:", error);
+      }
+    }
+  }, [createPeer]);
 
   // Handle user joined
   const handleUserJoined = useCallback(({ userName: remoteUserName, socketId }) => {
