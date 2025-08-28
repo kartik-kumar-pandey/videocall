@@ -63,9 +63,10 @@ export const useWebRTC = (roomId, userName) => {
       peer.on("stream", (remoteStream) => {
         setParticipants(prev => {
           const newMap = new Map(prev);
+          const existing = newMap.get(userId);
           newMap.set(userId, {
             stream: remoteStream,
-            userName: participants.get(userId)?.userName || "Unknown User"
+            userName: existing?.userName || "Unknown User"
           });
           return newMap;
         });
@@ -103,7 +104,7 @@ export const useWebRTC = (roomId, userName) => {
       setError(`Failed to create connection: ${error.message}`);
       return null;
     }
-  }, [roomId, userName, participants]);
+  }, [roomId, userName]);
 
   // Handle incoming signals
   const handleSignal = useCallback(({ data, fromUser, toUser }) => {
@@ -138,9 +139,11 @@ export const useWebRTC = (roomId, userName) => {
 
   // Handle user left
   const handleUserLeft = useCallback(({ userName: remoteUserName, socketId }) => {
+    let remaining = 0;
     setParticipants(prev => {
       const newMap = new Map(prev);
       newMap.delete(socketId);
+      remaining = newMap.size;
       return newMap;
     });
     
@@ -152,11 +155,11 @@ export const useWebRTC = (roomId, userName) => {
       peersRef.current.delete(socketId);
     }
     
-    if (participants.size === 0) {
+    if (remaining === 0) {
       setIsConnected(false);
       setConnectionStatus("waiting");
     }
-  }, [participants.size]);
+  }, []);
 
   useEffect(() => {
     if (!roomId || !userName) return;

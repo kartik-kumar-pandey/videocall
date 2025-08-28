@@ -5,9 +5,10 @@ export default function Home() {
   const router = useRouter();
   const [roomName, setRoomName] = useState('');
   const [userName, setUserName] = useState('');
-  const [serverStatus, setServerStatus] = useState('unknown');
+  const [serverStatus, setServerStatus] = useState('checking');
   const [deviceSupport, setDeviceSupport] = useState({ camera: false, microphone: false });
   const [isChecking, setIsChecking] = useState(false);
+  const signalingServer = process.env.NEXT_PUBLIC_SIGNALING_SERVER || 'http://localhost:5000';
 
   // Check device compatibility on mount
   useEffect(() => {
@@ -59,11 +60,15 @@ export default function Home() {
   const checkServerStatus = async () => {
     setIsChecking(true);
     try {
-      const response = await fetch('http://localhost:5000/health');
+      const response = await fetch(`/api/health`, { cache: 'no-store' });
       if (response.ok) {
-        const data = await response.json();
-        setServerStatus('online');
-        console.log('Server status:', data);
+        const payload = await response.json();
+        if (payload.ok) {
+          setServerStatus('online');
+          console.log('Server status:', payload.data);
+        } else {
+          setServerStatus('offline');
+        }
       } else {
         setServerStatus('offline');
       }
@@ -74,6 +79,13 @@ export default function Home() {
       setIsChecking(false);
     }
   };
+
+  // Auto-check server status on mount and periodically
+  useEffect(() => {
+    checkServerStatus();
+    const intervalId = setInterval(checkServerStatus, 30000);
+    return () => clearInterval(intervalId);
+  }, []);
 
   const canJoinRoom = userName.trim() && (deviceSupport.camera || deviceSupport.microphone);
 
@@ -152,12 +164,13 @@ export default function Home() {
               >
                 Check devices
               </button>
+              {/* Server status auto-checks; button optional for manual retry */}
               <button
                 onClick={checkServerStatus}
                 disabled={isChecking}
                 className="px-4 py-2 rounded-xl control-muted text-sm disabled:opacity-50"
               >
-                {isChecking ? 'Checking...' : 'Check server'}
+                {isChecking ? 'Checking...' : 'Retry server'}
               </button>
               <button
                 onClick={joinRoom}
